@@ -1,0 +1,100 @@
+/***
+ * Excerpted from "Test-Driven Development for Embedded C",
+ * published by The Pragmatic Bookshelf.
+ * Copyrights apply to this code. It may not be used to create training material, 
+ * courses, books, articles, and the like. Contact us if you are in doubt.
+ * We make no guarantees that this code is fit for any purpose. 
+ * Visit http://www.pragmaticprogrammer.com/titles/jgade for more book information.
+***/
+/*- ------------------------------------------------------------------ -*/
+/*-    Copyright (c) James W. Grenning -- All Rights Reserved          -*/
+/*-    For use by owners of Test-Driven Development for Embedded C,    -*/
+/*-    and attendees of Renaissance Software Consulting, Co. training  -*/
+/*-    classes.                                                        -*/
+/*-                                                                    -*/
+/*-    Available at http://pragprog.com/titles/jgade/                  -*/
+/*-        ISBN 1-934356-62-X, ISBN13 978-1-934356-62-3                -*/
+/*-                                                                    -*/
+/*-    Authorized users may use this source code in your own           -*/
+/*-    projects, however the source code may not be used to            -*/
+/*-    create training material, courses, books, articles, and         -*/
+/*-    the like. We make no guarantees that this source code is        -*/
+/*-    fit for any purpose.                                            -*/
+/*-                                                                    -*/
+/*-    www.renaissancesoftware.net james@renaissancesoftware.net       -*/
+/*- ------------------------------------------------------------------ -*/
+
+#include "inverter.h"
+
+//static inverterSiemens_t inverterSiemens;
+
+void inverter_init(
+inverterSiemens_t* inverterSiemens,
+uint16_t* GPIO_SW, uint16_t SW_PIN,
+uint16_t* GPIO_DIR, uint16_t DIR_PIN,
+uint8_t speed_ch, 
+void (*setgpio)(uint16_t*,uint16_t), void (*resetgpio)(uint16_t*,uint16_t),
+uint8_t (*setspeed)(uint16_t, uint8_t))
+{
+	uint8_t ret = 0;
+
+	inverterSiemens->gpio_sw = GPIO_SW;
+	inverterSiemens->sw_pin = SW_PIN;
+	inverterSiemens->gpio_dir = GPIO_DIR;
+	inverterSiemens->dir_pin = DIR_PIN;
+	inverterSiemens->setGPIO   = setgpio;
+	inverterSiemens->resetGPIO = resetgpio; 
+	inverterSiemens->setSpeed  = setspeed;
+	inverterSiemens->resetGPIO(GPIO_SW, SW_PIN);
+	if(speed_ch == 1 || speed_ch == 2)
+	{
+		inverterSiemens->speed_channel = speed_ch;
+		do{		
+			ret = inverterSiemens->setSpeed(0, speed_ch);
+		}while(ret!=1);
+	}
+}
+
+void inverterDriver_Destroy(void)
+{
+}
+
+void inverter_switch(inverterSiemens_t* inverterSiemens, uint8_t ONOFF)
+{
+	if(ONOFF == INVERTER_ON)
+	{
+		inverterSiemens->setGPIO(inverterSiemens->gpio_sw, inverterSiemens->sw_pin);
+	}
+	else if(ONOFF == INVERTER_OFF)
+	{
+		inverterSiemens->resetGPIO(inverterSiemens->gpio_sw, inverterSiemens->sw_pin);
+	}
+}
+
+void inverter_direction(inverterSiemens_t* inverterSiemens, uint8_t DIR)
+{
+	if(DIR == INVERTER_POS_DIR)
+	{
+		inverterSiemens->resetGPIO(inverterSiemens->gpio_dir, inverterSiemens->dir_pin);
+	}
+	else if(DIR == INVERTER_NEG_DIR)
+	{
+		inverterSiemens->setGPIO(inverterSiemens->gpio_dir, inverterSiemens->dir_pin);
+	}
+}
+
+uint8_t inverter_speed(inverterSiemens_t* inverterSiemens, uint16_t speed)
+{
+	if(inverterSiemens->setSpeed(speed, inverterSiemens->speed_channel))
+	{
+		inverterSiemens->speed = speed;
+		
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+
