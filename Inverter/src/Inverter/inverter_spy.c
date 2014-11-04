@@ -27,6 +27,7 @@
 #include "inverter_spy.h"
 
 typedef struct inverterSpy_t{
+	inverter_t base;
 	uint16_t* onAdd;
 	uint16_t  onPattern;
 	uint16_t* dirAdd;
@@ -40,7 +41,7 @@ typedef struct inverterSpy_t{
 
 uint8_t I2C1_Buffer1_Tx[8];
 
-static void turnOn(void* spy)
+static void turnOn(inverter_t* spy)
 {
 	inverterSpy_t* inverter;
 	
@@ -48,7 +49,7 @@ static void turnOn(void* spy)
 	*(inverter->onAdd) |= inverter->onPattern;
 }
 
-static void turnOff(void* spy)
+static void turnOff(inverter_t* spy)
 {
 	inverterSpy_t* inverter;
 	
@@ -56,7 +57,7 @@ static void turnOff(void* spy)
 	*(inverter->onAdd) &= ~(inverter->onPattern);
 }
 
-static void dirPositive(void* spy)
+static void dirPositive(inverter_t* spy)
 {
 	inverterSpy_t* inverter;
 	
@@ -71,7 +72,7 @@ static void dirPositive(void* spy)
 	}
 }
 
-static void dirNegative(void* spy)
+static void dirNegative(inverter_t* spy)
 {
 	inverterSpy_t* inverter;
 	
@@ -86,7 +87,7 @@ static void dirNegative(void* spy)
 	}
 }
 
-static uint8_t getErrorStatus(void* spy)
+static uint8_t getErrorStatus(inverter_t* spy)
 {
 	inverterSpy_t* inverter;
 	
@@ -98,7 +99,7 @@ static uint8_t getErrorStatus(void* spy)
 	return 1;
 }
 
-static uint8_t setSpeed(void* spy, uint16_t speed)
+static uint8_t setSpeed(inverter_t* spy, uint16_t speed)
 {
 	inverterSpy_t* inverter;
 	
@@ -110,7 +111,7 @@ static uint8_t setSpeed(void* spy, uint16_t speed)
 	return 1;
 }
 
-void* inverterSpy_init(inverterInterface_t* inverterInterface, uint16_t* onAdd, uint16_t onPattern, uint16_t* dirAdd, uint16_t dirPattern, uint8_t dirPolarity, uint16_t* errorAdd, uint16_t errorPattern, uint8_t speedCh)
+inverter_t* inverterSpy_init(inverterInterface_t* inverterInterface, uint16_t* onAdd, uint16_t onPattern, uint16_t* dirAdd, uint16_t dirPattern, uint8_t dirPolarity, uint16_t* errorAdd, uint16_t errorPattern, uint8_t speedCh)
 {
 	inverterSpy_t* inverterSpy;
 	
@@ -139,59 +140,59 @@ void* inverterSpy_init(inverterInterface_t* inverterInterface, uint16_t* onAdd, 
 	
 	*(onAdd) &= ~(onPattern);
 
-	return (void*)(inverterSpy);
+	return (inverter_t*)(inverterSpy);
 }
 
 void inverterSpy_destroy(void)
 {
 }
 
-void inverterSpy_turnOn(void* spy)
+void inverterSpy_turnOn(inverter_t* spy)
 {
 	inverterSpy_t* inverter;
 	
 	inverter = (inverterSpy_t*)spy;
-	(inverter->inverterInterface)->turnOn(inverter);
+	(inverter->inverterInterface)->turnOn(spy);
 }
 
-void inverterSpy_turnOff(void* spy)
+void inverterSpy_turnOff(inverter_t* spy)
 {
 	inverterSpy_t* inverter;
 	
 	inverter = (inverterSpy_t*)spy;
-	(inverter->inverterInterface)->turnOff(inverter);
+	(inverter->inverterInterface)->turnOff(spy);
 }
 
-void inverterSpy_dirPositive(void* spy)
+void inverterSpy_dirPositive(inverter_t* spy)
 {
 	inverterSpy_t* inverter;
 	
 	inverter = (inverterSpy_t*)spy;
-	(inverter->inverterInterface)->dirPositive(inverter);
+	(inverter->inverterInterface)->dirPositive(spy);
 }
 
-void inverterSpy_dirNegative(void* spy)
+void inverterSpy_dirNegative(inverter_t* spy)
 {
 	inverterSpy_t* inverter;
 	
 	inverter = (inverterSpy_t*)spy;
-	(inverter->inverterInterface)->dirNegative(inverter);
+	(inverter->inverterInterface)->dirNegative(spy);
 }
 
-uint8_t inverterSpy_getErrorStatus(void* spy)
+uint8_t inverterSpy_getErrorStatus(inverter_t* spy)
 {
 	inverterSpy_t* inverter;
 	
 	inverter = (inverterSpy_t*)spy;
-	return ((inverter->inverterInterface)->getErrorStatus(inverter));
+	return ((inverter->inverterInterface)->getErrorStatus(spy));
 }
 
-uint8_t inverterSpy_setSpeed(void* spy, uint16_t speed)
+uint8_t inverterSpy_setSpeed(inverter_t* spy, uint16_t speed)
 {
 	inverterSpy_t* inverter;
 	
 	inverter = (inverterSpy_t*)spy;
-	return ((inverter->inverterInterface)->setSpeed(inverter, speed));
+	return ((inverter->inverterInterface)->setSpeed(spy, speed));
 }
 
 

@@ -33,7 +33,9 @@ uint16_t GPIOA = 0x0000;	//DIR
 
 inverterInterface_t inverterInterface;
 
-inverterSpy inverter_X, inverter_Z;
+//inverterSpy inverter_X, inverter_Z;
+//inverter_t* inverter_X;
+inverter_t *inverter_X, *inverter_Y;
 
 TEST_GROUP(inverterSpyDriver)
 {
@@ -45,13 +47,13 @@ TEST_GROUP(inverterSpyDriver)
 		GPIOA = 0x0000;
 		memset(I2C1_Buffer1_Tx, 8, 0);
 		inverter_X = inverterSpy_init(&inverterInterface, &GPIOD, 0x8000, &GPIOE, 0x4000, 0, &GPIOE, 0x0004, 1);
-		inverter_Z = inverterSpy_init(&inverterInterface, &GPIOC, 0x0200, &GPIOA, 0x0004, 1, &GPIOC, 0x2000, 2);
+		inverter_Y = inverterSpy_init(&inverterInterface, &GPIOC, 0x0200, &GPIOA, 0x0004, 1, &GPIOC, 0x2000, 2);
     }
 
     void teardown()
     {
        free(inverter_X);
-	   free(inverter_Z);
+	   free(inverter_Y);	   
     }
 };
 
@@ -66,7 +68,7 @@ TEST(inverterSpyDriver, inverterSpyTurnOn)
 	inverterSpy_turnOn(inverter_X);
 	LONGS_EQUAL(0x8000, GPIOD & 0x8000);
 	LONGS_EQUAL(0x0000, GPIOC & 0x0200);
-	inverterSpy_turnOn(inverter_Z);
+	inverterSpy_turnOn(inverter_Y);
 	LONGS_EQUAL(0x8000, GPIOD & 0x8000);
 	LONGS_EQUAL(0x0200, GPIOC & 0x0200);	
 }
@@ -74,11 +76,11 @@ TEST(inverterSpyDriver, inverterSpyTurnOn)
 TEST(inverterSpyDriver, inverterSpyTurnOff)
 {
 	inverterSpy_turnOn(inverter_X);
-	inverterSpy_turnOn(inverter_Z);
+	inverterSpy_turnOn(inverter_Y);
 	inverterSpy_turnOff(inverter_X);
 	LONGS_EQUAL(0x0000, GPIOD & 0x8000);
 	LONGS_EQUAL(0x0200, GPIOC & 0x0200);
-	inverterSpy_turnOff(inverter_Z);
+	inverterSpy_turnOff(inverter_Y);
 	LONGS_EQUAL(0x0000, GPIOD & 0x8000);
 	LONGS_EQUAL(0x0000, GPIOC & 0x0200);		
 }
@@ -86,7 +88,7 @@ TEST(inverterSpyDriver, inverterSpyTurnOff)
 TEST(inverterSpyDriver, inverterSpyDirPos)
 {
 	inverterSpy_dirPositive(inverter_X);
-	inverterSpy_dirPositive(inverter_Z);
+	inverterSpy_dirPositive(inverter_Y);
 	LONGS_EQUAL(0xFFFB & ~(0x4000), GPIOE);
 	LONGS_EQUAL(0x0000 | (0x0004), GPIOA);
 }
@@ -94,11 +96,11 @@ TEST(inverterSpyDriver, inverterSpyDirPos)
 TEST(inverterSpyDriver, inverterSpyDirNeg)
 {
 	inverterSpy_dirPositive(inverter_X);
-	inverterSpy_dirPositive(inverter_Z);
+	inverterSpy_dirPositive(inverter_Y);
 	inverterSpy_dirNegative(inverter_X);	
 	LONGS_EQUAL(0xFFFB | (0x4000), GPIOE);
 	LONGS_EQUAL(0x0000 | (0x0004), GPIOA);
-	inverterSpy_dirNegative(inverter_Z);	
+	inverterSpy_dirNegative(inverter_Y);	
 	LONGS_EQUAL(0xFFFB | (0x4000), GPIOE);
 	LONGS_EQUAL(0x0000 & ~(0x0004), GPIOA);	
 }
@@ -106,19 +108,19 @@ TEST(inverterSpyDriver, inverterSpyDirNeg)
 TEST(inverterSpyDriver, inverterSpyError)
 {
 	CHECK(inverterSpy_getErrorStatus(inverter_X) == 0);
-	CHECK(inverterSpy_getErrorStatus(inverter_Z) == 0);	
+	CHECK(inverterSpy_getErrorStatus(inverter_Y) == 0);	
 	fake_inverter_setError(&GPIOE, 0x0004);
 	CHECK(inverterSpy_getErrorStatus(inverter_X) == 1);
-	CHECK(inverterSpy_getErrorStatus(inverter_Z) == 0);	
+	CHECK(inverterSpy_getErrorStatus(inverter_Y) == 0);	
 	fake_inverter_setError(&GPIOC, 0x2000);
 	CHECK(inverterSpy_getErrorStatus(inverter_X) == 1);
-	CHECK(inverterSpy_getErrorStatus(inverter_Z) == 1);	
+	CHECK(inverterSpy_getErrorStatus(inverter_Y) == 1);	
 	fake_inverter_clearError(&GPIOC, 0x2000);	
 	CHECK(inverterSpy_getErrorStatus(inverter_X) == 1);
-	CHECK(inverterSpy_getErrorStatus(inverter_Z) == 0);	
+	CHECK(inverterSpy_getErrorStatus(inverter_Y) == 0);	
 	fake_inverter_clearError(&GPIOE, 0x0004);
 	CHECK(inverterSpy_getErrorStatus(inverter_X) == 0);
-	CHECK(inverterSpy_getErrorStatus(inverter_Z) == 0);		
+	CHECK(inverterSpy_getErrorStatus(inverter_Y) == 0);		
 }
 
 TEST(inverterSpyDriver, inverterSetSpeed)
@@ -132,7 +134,7 @@ TEST(inverterSpyDriver, inverterSetSpeed)
 	LONGS_EQUAL(0x42, I2C1_Buffer1_Tx[2]);	
 	LONGS_EQUAL(0x00, I2C1_Buffer1_Tx[3]);
 	LONGS_EQUAL(0x00, I2C1_Buffer1_Tx[4]);	
-	inverterSpy_setSpeed(inverter_Z, 0x248);
+	inverterSpy_setSpeed(inverter_Y, 0x248);
 	LONGS_EQUAL(0x08, I2C1_Buffer1_Tx[1]);
 	LONGS_EQUAL(0x42, I2C1_Buffer1_Tx[2]);	
 	LONGS_EQUAL(0x02, I2C1_Buffer1_Tx[3]);

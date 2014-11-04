@@ -34,12 +34,15 @@
 #include <memory.h>
 
 typedef struct {
-	void (*turnOn)(void*);
-	void (*turnOff)(void*);
-	void (*dirPositive)(void*);
-	void (*dirNegative)(void*);
-	uint8_t (*getErrorStatus)(void*);
-	uint8_t (*setSpeed)(void*, uint16_t);
+} inverter_t;
+
+typedef struct {
+	void (*turnOn)(inverter_t*);
+	void (*turnOff)(inverter_t*);
+	void (*dirPositive)(inverter_t*);
+	void (*dirNegative)(inverter_t*);
+	uint8_t (*getErrorStatus)(inverter_t*);
+	uint8_t (*setSpeed)(inverter_t*, uint16_t);
 } inverterInterface_t;
 
 #endif  /* D_InverterInterface_H */

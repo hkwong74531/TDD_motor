@@ -39,17 +39,15 @@ enum {INVERTER_ON = 1, INVERTER_OFF = 0};
 enum {INVERTER_POS_DIR = 1, INVERTER_NEG_DIR = 0};
 enum {INVERTER_SUCCESS = 1, INVERTER_FAILURE = 0};
 
-typedef void* inverterSpy;
-
 extern uint8_t I2C1_Buffer1_Tx[8];
 
-inverterSpy inverterSpy_init(inverterInterface_t*, uint16_t*, uint16_t, uint16_t*, uint16_t, uint8_t, uint16_t*, uint16_t, uint8_t);
+inverter_t* inverterSpy_init(inverterInterface_t*, uint16_t*, uint16_t, uint16_t*, uint16_t, uint8_t, uint16_t*, uint16_t, uint8_t);
 void inverterSpy_destroy(void);
-void inverterSpy_turnOn(inverterSpy);
-void inverterSpy_turnOff(inverterSpy);
-void inverterSpy_dirPositive(inverterSpy);
-void inverterSpy_dirNegative(inverterSpy);
-uint8_t inverterSpy_getErrorStatus(inverterSpy);
-uint8_t inverterSpy_setSpeed(inverterSpy, uint16_t);
+void inverterSpy_turnOn(inverter_t*);
+void inverterSpy_turnOff(inverter_t*);
+void inverterSpy_dirPositive(inverter_t*);
+void inverterSpy_dirNegative(inverter_t*);
+uint8_t inverterSpy_getErrorStatus(inverter_t*);
+uint8_t inverterSpy_setSpeed(inverter_t*, uint16_t);
 
 #endif  /* D_InverterSpy_H */
