@@ -57,12 +57,12 @@ uint8_t motor_getGate(void)
 	return safetyGate_switch;
 }
 
-void fake_encoder_setXCnt(uint8_t cnt)
+void fake_encoder_setXCnt(uint16_t cnt)
 {
 	encoder_count_X = cnt;
 }
 
-void fake_encoder_setZCnt(uint8_t cnt)
+void fake_encoder_setZCnt(uint16_t cnt)
 {
 	encoder_count_Z = cnt;
 }

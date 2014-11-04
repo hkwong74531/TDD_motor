@@ -48,6 +48,7 @@ motorState_t motor_getState(motor_t*);
 void motor_init(motor_t*);
 void motor_stop(motorData);
 //void motor_start(motor_t*, motorDirection_t);
+int16_t motor_getPosition(motor_t*);
 motorDirection_t motor_getDirection(motor_t*);
 void motor_setSpeed(motor_t*, uint16_t);
 void motor_setTarget(motor_t*, int16_t);

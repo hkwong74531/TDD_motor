@@ -15,8 +15,8 @@ uint8_t motor_getXDatum(void);
 void fake_motor_setZDatum(uint8_t pos);
 uint8_t fake_motor_getZDatum(void);
 uint8_t motor_getZDatum(void);
-void fake_encoder_setXCnt(uint8_t cnt);
-void fake_encoder_setZCnt(uint8_t cnt);
+void fake_encoder_setXCnt(uint16_t cnt);
+void fake_encoder_setZCnt(uint16_t cnt);
 uint16_t getEncoderCount_X(void);
 uint16_t getEncoderCount_Z(void);
 

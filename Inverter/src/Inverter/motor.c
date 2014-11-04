@@ -381,6 +381,15 @@ motorDirection_t motor_getDirection(motor_t* motor)
 	return (motorData->direction);
 }
 
+int16_t motor_getPosition(motor_t* motor)
+{
+	motorData_t* motorData;
+	
+	motorData = (motorData_t*)(motor);
+
+	return motorData->position;
+}
+
 void motor_setGate(motor_t* motor, uint8_t gate)
 {
 	motorData_t* motorData;
@@ -419,7 +428,22 @@ void motor_state_int(motor_t* motor)
 	uint16_t delta_N, pulse_N0;
 	
 	motorData = (motorData_t*)(motor);
-
+#if 0
+	pulse_XN0 = pulse_XN;
+    ENC_Get_Electrical_Angle();
+	if(pulse_XN - pulse_XN0 > 640)	// step reverse and cross 0. actually -ve
+	{
+		delta_XN = pulse_XN - pulse_XN0 - 1024;
+	}
+	else if(pulse_XN0 - pulse_XN > 640) // step forward and cross 1023. actually +ve
+	{
+		delta_XN = pulse_XN - pulse_XN0 + 1024;
+	}
+	else
+	{
+		delta_XN = pulse_XN - pulse_XN0;
+	}
+#endif
     pulse_N0 = motorData->pulse_N;
     motorData->pulse_N  = motorData->getEncoderCount();
     delta_N =  motorData->pulse_N - pulse_N0;
