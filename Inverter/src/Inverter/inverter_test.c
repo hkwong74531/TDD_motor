@@ -3,6 +3,7 @@
 static uint8_t I2C1_Buffer1_Tx[8];
 static uint8_t motor_datum_switch_X = 1;
 static uint8_t motor_datum_switch_Z = 1;
+static uint8_t safetyGate_switch = 0;
 static uint16_t encoder_count_X = 0;
 static uint16_t encoder_count_Z = 0;
 
@@ -44,6 +45,16 @@ uint8_t motor_getXDatum(void)
 uint8_t motor_getZDatum(void)
 {
 	return (fake_motor_getZDatum());
+}
+
+void fake_motor_setGate(uint8_t gate)
+{
+	safetyGate_switch = gate;
+}
+
+uint8_t motor_getGate(void)
+{
+	return safetyGate_switch;
 }
 
 void fake_encoder_setXCnt(uint8_t cnt)

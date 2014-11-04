@@ -39,13 +39,21 @@ typedef enum
 
 typedef void* motorData;
 
-motorData motor_create(inverterInterface_t*, motorData, uint8_t (*)(void), uint16_t (*)(void));
+typedef struct{
+} motor_t;
 
-motorState_t motor_getState(motorData);
-void motor_init(motorData);
+motor_t* motor_create(inverterInterface_t*, inverter_t*, uint8_t (*)(void), uint16_t (*)(void));
+
+motorState_t motor_getState(motor_t*);
+void motor_init(motor_t*);
 void motor_stop(motorData);
+//void motor_start(motor_t*, motorDirection_t);
+motorDirection_t motor_getDirection(motor_t*);
+void motor_setSpeed(motor_t*, uint16_t);
+void motor_setTarget(motor_t*, int16_t);
+void motor_setGate(motor_t*, uint8_t);
 
-void motor_state_int(motorData);
-void motor_state_process(motorData);
+void motor_state_int(motor_t*);
+void motor_state_process(motor_t*);
 
 #endif
