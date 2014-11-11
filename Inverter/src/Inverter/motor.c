@@ -6,6 +6,9 @@ typedef struct
 	uint16_t speed;
 	uint8_t	 speed_flag;
 	int16_t  position;
+	int16_t  position_0;
+	uint16_t int_cnt;
+	uint8_t  wrong_dir;
 	int16_t  pulse_N;
 	int16_t  target;
 //	int16_t  max;
@@ -58,13 +61,10 @@ void (*motor_state_function[MOTOR_DUMMY])(motorData_t*) =
  *		Private Interface
  *
  */
-#if 0
-static void motor_reset_enter(void* motor)
+
+static void motor_reset_enter(motorData_t* motorData)
 {
-	motorData_t* motorData;
 	motorState_t preState;
-	
-	motorData = (motorData_t*)(motor);
 
 	preState = motorData->state;	
 	memset(motorData, 0, sizeof(motorData_t));
@@ -72,7 +72,6 @@ static void motor_reset_enter(void* motor)
 	motorData->preState = preState;
 	(motorData->inverterInterface)->turnOff(motorData->inverter);
 }
-#endif
 
 static void motor_reset_state(motorData_t* motorData)
 {
@@ -134,19 +133,21 @@ static void motor_datum_enter(motorData_t* motorData)
 	motorData->preState = motorData->state;
 	motorData->state = MOTOR_DATUM;
 	motorData->direction = MOTOR_POSDIR;
+	(motorData->inverterInterface)->turnOn(motorData->inverter);
+	(motorData->inverterInterface)->dirPositive(motorData->inverter);	
 }
 
 static void motor_datum_state(motorData_t* motorData)
 {
 	switch(motorData->event)
 	{
-	case MOTOR_READY_EVENT:	
+	case MOTOR_DATUM_EVENT:	
 		motor_ready_enter(motorData);
 		break;
 	case MOTOR_ERROR_EVENT:
 		motor_error_enter(motorData);
 		break;
-	case MOTOR_DATUM_EVENT:
+	case MOTOR_READY_EVENT:
 	case MOTOR_INIT_EVENT:
 	case MOTOR_TO_TARGET_EVENT:
 	case MOTOR_RESUME_EVENT:
@@ -191,15 +192,14 @@ static void motor_ready_state(motorData_t* motorData)
 		break;
 	case MOTOR_TO_TARGET_EVENT:
 		motorData->event = MOTOR_DUMMY_EVENT;
-		if(motorData->direction == MOTOR_POSDIR)
+		if(motorData->position >= motorData->target + motorData->tolerance)
 		{
-			(motorData->inverterInterface)->dirPositive(motorData->inverter);
+			motor_start(motorData, MOTOR_NEGDIR);
 		}
-		else if(motorData->direction == MOTOR_NEGDIR)
+		else if(motorData->position <= motorData->target - motorData->tolerance)
 		{
-			(motorData->inverterInterface)->dirNegative(motorData->inverter);
-		}
-		(motorData->inverterInterface)->turnOn(motorData->inverter);		
+			motor_start(motorData, MOTOR_POSDIR);
+		}	
 		break;
 	case MOTOR_ERROR_EVENT:
 		motorData->event = MOTOR_DUMMY_EVENT;
@@ -221,14 +221,14 @@ static void motor_ready_state(motorData_t* motorData)
 		{
 			if(motorData->position > motorData->target + motorData->tolerance)
 			{
-//				motorZ_int_cnt = 0;
-//				MotorZ_Position_0 = motorZData->position;
+				motorData->position_0 = motorData->position;
+				motor_setSpeed((motor_t*)motorData, 30);
 				motor_start(motorData, MOTOR_NEGDIR);
 			}
 			else if(motorData->position < motorData->target - motorData->tolerance)
 			{
-//				motorZ_int_cnt = 0;
-//				MotorZ_Position_0 = motorZData.position;
+				motorData->position_0 = motorData->position;
+				motor_setSpeed((motor_t*)motorData, 30);				
 				motor_start(motorData, MOTOR_POSDIR);
 			}		
 		}		
@@ -251,7 +251,7 @@ static void motor_error_state(motorData_t* motorData)
 		switch(motorData->preState)
 		{
 		case MOTOR_RESET:
-//			motor_reset_enter(motorData);
+			motor_reset_enter(motorData);
 			break;
 		case MOTOR_HOMING:
 			motor_homing_enter(motorData);
@@ -301,6 +301,24 @@ static void motor_error_state(motorData_t* motorData)
 	motorData->event = MOTOR_DUMMY_EVENT;
 }
 
+static void motor_start(motorData_t* motorData, motorDirection_t dir)
+{
+	if(dir != MOTOR_STOP)
+	{
+		motorData->direction = dir;
+		motorData->int_cnt = 0;
+		if(dir == MOTOR_POSDIR)
+		{
+			(motorData->inverterInterface)->dirPositive(motorData->inverter);
+		}
+		else
+		{
+			(motorData->inverterInterface)->dirNegative(motorData->inverter);
+		}
+		(motorData->inverterInterface)->turnOn(motorData->inverter);
+	}	
+}
+
 /*
  *
  *		Public Interface
@@ -347,15 +365,7 @@ void motor_init(motor_t* motor)
 	motorData->event = MOTOR_INIT_EVENT;
 }
 
-void motor_brake(void* motor)
-{
-	motorData_t* motorData;
-	
-	motorData = (motorData_t*)(motor);
-	(motorData->inverterInterface)->turnOff(motorData->inverter);
-}
-
-void motor_stop(void* motor)
+void motor_stop(motor_t* motor)
 {
 	motorData_t* motorData;
 	
@@ -364,13 +374,43 @@ void motor_stop(void* motor)
 	motorData->direction = MOTOR_STOP;
 }
 
-void motor_start(motorData_t* motorData, motorDirection_t dir)
+void motor_brake(motor_t* motor)
 {
-//	motorData_t* motorData;
+	motorData_t* motorData;
 	
-//	motorData = (motorData_t*)(motor);
-	motorData->direction = dir;
-	motorData->event = MOTOR_TO_TARGET_EVENT;	
+	motorData = (motorData_t*)(motor);
+	(motorData->inverterInterface)->turnOff(motorData->inverter);
+}
+
+void motor_setSpeed(motor_t* motor, uint16_t speed)
+{
+	motorData_t* motorData;
+	
+	motorData = (motorData_t*)(motor);
+
+	if(speed != motorData->speed)
+	{
+		motorData->speed_flag = 1;
+		motorData->speed = speed;
+	}
+}
+
+uint16_t motor_getSpeed(motor_t* motor)
+{
+	motorData_t* motorData;
+	
+	motorData = (motorData_t*)(motor);
+
+	return (motorData->speed); 
+}
+
+void motor_setTarget(motor_t* motor, int16_t target)
+{
+	motorData_t* motorData;
+	
+	motorData = (motorData_t*)(motor);
+	motorData->target = target;
+	motorData->event = MOTOR_TO_TARGET_EVENT;		
 }
 
 motorDirection_t motor_getDirection(motor_t* motor)
@@ -390,6 +430,23 @@ int16_t motor_getPosition(motor_t* motor)
 	return motorData->position;
 }
 
+uint8_t motor_checkPosition(motor_t* motor)
+{	
+	motorData_t* motorData;
+	int16_t position, target;
+
+	motorData = (motorData_t*)(motor);
+	position = motorData->position;
+	target = motorData->target;
+
+	if((position > (target - motorData->tolerance)) && (position < (target + motorData->tolerance)))
+	{
+		return 1;
+	}
+	
+	return 0;
+}
+
 void motor_setGate(motor_t* motor, uint8_t gate)
 {
 	motorData_t* motorData;
@@ -401,31 +458,11 @@ void motor_setGate(motor_t* motor, uint8_t gate)
 	}
 }
 
-void motor_setSpeed(motor_t* motor, uint16_t speed)
-{
-	motorData_t* motorData;
-	
-	motorData = (motorData_t*)(motor);
-
-	if(speed != motorData->speed)
-	{
-		motorData->speed_flag = 1;
-		motorData->speed = speed;
-	}
-}
-
-void motor_setTarget(motor_t* motor, int16_t target)
-{
-	motorData_t* motorData;
-	
-	motorData = (motorData_t*)(motor);
-	motorData->target = target;
-}
-
 void motor_state_int(motor_t* motor)
 {
 	motorData_t* motorData;
-	uint16_t delta_N, pulse_N0;
+	uint16_t pulse_N0;
+	int16_t  delta_N;
 	
 	motorData = (motorData_t*)(motor);
 #if 0
@@ -453,14 +490,47 @@ void motor_state_int(motor_t* motor)
     }
     else if (delta_N>500)
     {
-    	delta_N = 1000 -2 - delta_N;
+//    	delta_N = 1000 -2 - delta_N;
+		delta_N = delta_N - 998;
     }
     motorData->position = motorData->position + delta_N;	
 
-	if((motorData->gate == 1) || ((motorData->inverterInterface)->getErrorStatus(motorData->inverter)) == 1)
+	if(motorData->direction != MOTOR_STOP && motorData->state != MOTOR_ERROR)
+	{
+		if(motorData->int_cnt >= WRONG_DIRECTION_TIMER_CNT)
+		{
+			motorData->int_cnt = 0;
+			if(motorData->direction == MOTOR_POSDIR)
+			{
+				if(motorData->position <= motorData->position_0)
+				{
+					motorData->wrong_dir = 1;
+				}
+			}
+			else if(motorData->direction == MOTOR_NEGDIR)
+			{
+				if(motorData->position >= motorData->position_0)
+				{
+					motorData->wrong_dir = 1;
+				}
+			}
+		}
+		if(motorData->int_cnt == 0)
+		{
+			motorData->position_0 = motorData->position;
+		}
+		motorData->int_cnt++;
+	}
+	else
+	{
+		motorData->int_cnt = 0;
+	}
+		
+	
+	if((motorData->gate == 1) || ((motorData->inverterInterface)->getErrorStatus(motorData->inverter)) == 1 || (motorData->wrong_dir == 1))
 	{
 		(motorData->inverterInterface)->turnOff(motorData->inverter);
-//		motorX_int_cnt = 0;
+		motorData->int_cnt = 0;
 		motorData->event = MOTOR_ERROR_EVENT;
 	}
 	else
@@ -473,7 +543,7 @@ void motor_state_int(motor_t* motor)
 				position_switch = motorData->getDatumSwitch();
 				if (position_switch == 0)
 				{
-//					motorZ_int_cnt = 0;
+					motorData->int_cnt = 0;
 					(motorData->inverterInterface)->dirPositive(motorData->inverter);
 					motorData->event = MOTOR_DATUM_EVENT;
 				}			
@@ -482,16 +552,32 @@ void motor_state_int(motor_t* motor)
 				position_switch = motorData->getDatumSwitch();
 				if (position_switch == 1)
 				{
-//					motorZ_int_cnt = 0;
+					motorData->int_cnt = 0;
 					motorData->position = 0;
 					(motorData->inverterInterface)->turnOff(motorData->inverter);
-//					motorZ_setSpeed(0);
 					motorData->direction = MOTOR_STOP;
-					motorData->event = MOTOR_READY_EVENT;
+					motorData->event = MOTOR_DATUM_EVENT;
 				}			
 				break;
 			case MOTOR_READY:
-		
+				if(motorData->direction == MOTOR_POSDIR)
+				{
+					if(motorData->position >= motorData->target - motorData->tolerance)
+					{
+						motorData->int_cnt = 0;
+						(motorData->inverterInterface)->turnOff(motorData->inverter);
+						motorData->direction = MOTOR_STOP;
+					}
+				}
+				else if(motorData->direction == MOTOR_NEGDIR)
+				{
+					if(motorData->position <= motorData->target + motorData->tolerance)
+					{
+						motorData->int_cnt = 0;
+						(motorData->inverterInterface)->turnOff(motorData->inverter);
+						motorData->direction = MOTOR_STOP;
+					}
+				}
 				break;
 			case MOTOR_ERROR:
 				motorData->event = MOTOR_RESUME_EVENT;
