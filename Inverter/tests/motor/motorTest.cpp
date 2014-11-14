@@ -38,8 +38,10 @@ uint16_t GPIOA = 0x0000;	//DIR
 
 inverterInterface_t inverterInterface;
 
-inverter_t *inverter_X, *inverter_Z;
-motor_t *motor_X, *motor_Z;
+inverter_t inverter_X;
+inverter_t inverter_Z;
+motor_t motor_X;
+motor_t motor_Z;
 
 TEST_GROUP(MotorDriver)
 {
@@ -305,7 +307,7 @@ TEST(MotorDriver, motorArrivePosTarget)
 
 	encoder_loop = 780;
 
-	while(motor_checkPosition(motor_X)==0)
+	while(motor_getDirection(motor_X)!=MOTOR_STOP)
 	{
 		steps += 3;
 		encoder_loop += 3;		
@@ -347,7 +349,7 @@ TEST(MotorDriver, motorArriveNegTarget)
 		
 	encoder_loop = 780;
 
-	while(motor_checkPosition(motor_Z)==0)
+	while(motor_getDirection(motor_Z)!=MOTOR_STOP)
 	{
 		steps -= 2;
 		encoder_loop -= 2;		

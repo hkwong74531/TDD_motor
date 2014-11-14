@@ -33,7 +33,8 @@ uint16_t GPIOA = 0x0000;	//DIR
 
 inverterInterface_t inverterInterface;
 
-inverter_t *inverter_X, *inverter_Y;
+inverter_t inverter_X;
+inverter_t inverter_Y;
 
 TEST_GROUP(inverterSpyDriver)
 {
